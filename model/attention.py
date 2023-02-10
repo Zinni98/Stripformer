@@ -22,7 +22,7 @@ class IntraSA(nn.Module):
             Number of channels of the input image
 
         heads : int
-            Number of heads for the multi-head self attention mechanism
+            Number of heads for the multi-head self attention mechanism (default = 5)
         """
         super().__init__()
         self.channels = channels
