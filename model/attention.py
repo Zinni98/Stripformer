@@ -6,9 +6,10 @@ import torch
 class Attention(nn.Module):
     def __init__(self, heads):
         super().__init__()
-
+        self.heads = heads
+        self.softmax = nn.Softmax(dim=-1)
     def forward(self, q, k, v):
-        pass
+        
 
 
 class IntraSA(nn.Module):
@@ -57,12 +58,12 @@ class IntraSA(nn.Module):
 
         self.attn = Attention(heads)
 
-    def forward(self, x):
+    def forward(self, x, batch_dim=0):
         sz = x.size()
         if len(sz) != 4:
             raise ValueError(f"Input has wrong number of dimensions: \
                                expected 4, got {len(sz)}")
-        batch_size = sz[0]
+        batch_size = sz[batch_dim]
         x = rearrange(x,
                       "b c h w -> b h w c")
         x = self.l_norm(x)
@@ -70,6 +71,7 @@ class IntraSA(nn.Module):
                       "b h w c -> b c h w")
         x = self.conv(x)
 
+        # Dividing the number of channels
         x_horiz, x_vert = torch.chunk(x, chunks=2, dim=1)
 
         # Keeping the naming consistent with the paper: d = c/2
@@ -77,7 +79,8 @@ class IntraSA(nn.Module):
                             "b d h w -> (b h) w d")
         x_vert = rearrange(x_vert,
                            "b d h w -> (b w) h d")
-
+        
+        # Splitting heads inside the attention module, not here
         q_horiz = self.p_q_h(x_horiz)
         k_horiz = self.p_k_h(x_horiz)
         v_horiz = self.p_v_h(x_horiz)
