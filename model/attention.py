@@ -1,6 +1,7 @@
 import torch.nn as nn
 from einops import rearrange
 import torch
+import math
 
 
 class Attention(nn.Module):
@@ -8,8 +9,18 @@ class Attention(nn.Module):
         super().__init__()
         self.heads = heads
         self.softmax = nn.Softmax(dim=-1)
+
     def forward(self, q, k, v):
-        
+        # I am already transposing the tensors to allow matrix multiplication
+        query = rearrange(q, "b n (h c) -> b h n c", h=self.heads)
+        key = rearrange(k, "b n (h c) -> b h c n", h=self.heads)
+        value = rearrange(v, "b n (h c) -> b h n c", h=self.heads)
+        _, _, _, d = query.size()
+        pre_soft = torch.einsum("bhnc,bhcn->bhnn", query, key)
+        att_probs = self.softmax(pre_soft/math.sqrt(d))
+        final = torch.einsum("bhnn,bhnc->bhnc", att_probs, value)
+        flat_final = rearrange(final, "b h n c -> b n (h c)")
+        return flat_final
 
 
 class IntraSA(nn.Module):
