@@ -15,10 +15,13 @@ class Attention(nn.Module):
         query = rearrange(q, "b n (h c) -> b h n c", h=self.heads)
         key = rearrange(k, "b n (h c) -> b h c n", h=self.heads)
         value = rearrange(v, "b n (h c) -> b h n c", h=self.heads)
+        print(f"query: {query.shape}")
         _, _, _, d = query.size()
-        pre_soft = torch.einsum("bhnc,bhcn->bhnn", query, key)
+        pre_soft = torch.einsum("bhnc,bhcm->bhnm", query, key)
+        print(f"pre_soft: {pre_soft.shape}")
         att_probs = self.softmax(pre_soft/math.sqrt(d))
-        final = torch.einsum("bhnn,bhnc->bhnc", att_probs, value)
+        final = torch.einsum("bhmn,bhnc->bhmc", att_probs, value)
+        print(f"final: {final.shape}")
         flat_final = rearrange(final, "b h n c -> b n (h c)")
         return flat_final
 
@@ -90,7 +93,7 @@ class IntraSA(nn.Module):
                             "b d h w -> (b h) w d")
         x_vert = rearrange(x_vert,
                            "b d h w -> (b w) h d")
-        
+
         # Splitting heads inside the attention module, not here
         q_horiz = self.p_q_h(x_horiz)
         k_horiz = self.p_k_h(x_horiz)
@@ -112,13 +115,14 @@ class IntraSA(nn.Module):
                               "(b w) h d -> b d h w",
                               b=batch_size)
         attn = torch.cat((attn_horiz, attn_vert))
+        return attn
 
 
 if __name__ == "__main__":
-    x = torch.randn([100, 4, 12, 10])
-    x_horiz, x_vert = torch.chunk(x, chunks=2, dim=1)
+    q = torch.randn([100, 12, 100])
+    k = torch.randn([100, 12, 100])
+    v = torch.randn([100, 12, 100])
+    att = Attention(5)
 
-    x_horiz = rearrange(x_horiz, "b d h w -> (b h) w d")
-    x_vert = rearrange(x_vert, "b d h w -> (b w) h d")
-    print(x_horiz.size())
-    print(x_vert.size())
+    res = att(q, k, v)
+    print(res.shape)
