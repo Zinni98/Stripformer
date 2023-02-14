@@ -4,6 +4,44 @@ import torch
 import math
 
 
+class MLPBlock(nn.Module):
+    # taken from original repository of the paper (Not much information about this
+    # module on the paper)
+    def __init__(self, in_channels):
+        self.l_norm = nn.LayerNorm(self.channels)
+        self.fc1 = nn.Linear(in_channels,
+                             in_channels * 4
+                             )
+        self.fc2 = nn.Linear(in_channels*4,
+                             in_channels
+                             )
+        self.activation = nn.GELU()
+        self.cpe = nn.Conv2d(in_channels,
+                             in_channels,
+                             kernel_size=3,
+                             padding=1,
+                             groups=in_channels
+                             )
+        self._init_weights()
+
+    def _init_weights(self):
+        nn.init.xavier_uniform_(self.fc1.weight)
+        nn.init.xavier_uniform_(self.fc2.weight)
+
+        nn.init.normal_(self.fc1.bias, std=1e-6)
+        nn.init.normal_(self.fc2.bias, std=1e-6)
+
+    def forward(self, x):
+        x = rearrange(x, "b c h w -> b (h w) c")
+        in_f = x
+        x = self.l_norm(x)
+        x = self.activation(self.fc1(x))
+        x = self.fc2(x) + in_f
+        x = rearrange(x, "b (h w) c -> b c h w")
+        x = self.cpe(x) + x
+        return x
+
+
 class Attention(nn.Module):
     def __init__(self, heads):
         super().__init__()
@@ -11,17 +49,20 @@ class Attention(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, q, k, v):
+        _, _, c = q.size()
+        if len(c) % 5 != 0:
+            raise ValueError("Number of heads should divide \
+                              the number of channels")
         # I am already transposing the tensors to allow matrix multiplication
+        # Here I am creating a new dimension having the number of heads
         query = rearrange(q, "b n (h c) -> b h n c", h=self.heads)
         key = rearrange(k, "b n (h c) -> b h c n", h=self.heads)
         value = rearrange(v, "b n (h c) -> b h n c", h=self.heads)
-        print(f"query: {query.shape}")
         _, _, _, d = query.size()
         pre_soft = torch.einsum("bhnc,bhcm->bhnm", query, key)
-        print(f"pre_soft: {pre_soft.shape}")
         att_probs = self.softmax(pre_soft/math.sqrt(d))
         final = torch.einsum("bhmn,bhnc->bhmc", att_probs, value)
-        print(f"final: {final.shape}")
+        # concatenating all heads and flattening the heads dimension
         flat_final = rearrange(final, "b h n c -> b n (h c)")
         return flat_final
 
@@ -46,10 +87,10 @@ class IntraSA(nn.Module):
         self.split_channels = channels // 2
 
         self.l_norm = nn.LayerNorm(self.channels)
-        self.conv = nn.Conv2d(self.channels,
-                              self.channels,
-                              kernel_size=1,
-                              )
+        self.conv1 = nn.Conv2d(self.channels,
+                               self.channels,
+                               kernel_size=1,
+                               )
         # linear projection to obtain queries horizontally
         self.p_q_h = nn.Linear(self.split_channels,
                                self.split_channels)
@@ -72,7 +113,15 @@ class IntraSA(nn.Module):
 
         self.attn = Attention(heads)
 
+        self.conv2 = nn.Conv2d(self.channels,
+                               self.channels,
+                               kernel_size=1,
+                               )
+
+        self.mlp = MLPBlock(self.channels)
+
     def forward(self, x, batch_dim=0):
+        input_f = x
         sz = x.size()
         if len(sz) != 4:
             raise ValueError(f"Input has wrong number of dimensions: \
@@ -114,8 +163,12 @@ class IntraSA(nn.Module):
         attn_vert = rearrange(attn_vert,
                               "(b w) h d -> b d h w",
                               b=batch_size)
-        attn = torch.cat((attn_horiz, attn_vert))
-        return attn
+
+        attn_out = self.conv2(torch.cat((attn_horiz, attn_vert), dim=1)) + input_f
+
+        x = self.mlp(attn_out)
+
+        return x
 
 
 if __name__ == "__main__":
