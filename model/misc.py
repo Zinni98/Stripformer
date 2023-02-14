@@ -54,6 +54,8 @@ class MultiHeadAttention(nn.Module):
     def forward(self, q, k, v):
         """
         Applies the multi-head attention mechanism on the given input tensors.
+        Heads are obtained from channel dimension (e.g. if the channel dimension
+        is of length 10 and the number of heads is 2, we get 2 heads of length 5)
 
         Parameters
         ----------

@@ -109,7 +109,7 @@ class IntraSA(nn.Module):
 
 
 class InterSA(nn.Module):
-    def __init__(self, channels, heads):
+    def __init__(self, channels, heads=5):
         super().__init__()
         self.channels = channels
         self.heads = heads
@@ -121,25 +121,20 @@ class InterSA(nn.Module):
                                self.channels,
                                kernel_size=1,
                                )
-        # linear projection to obtain queries horizontally
-        self.p_q_h = nn.Linear(self.split_channels,
-                               self.split_channels)
-        # linear projection to obtain keys horizontally
-        self.p_k_h = nn.Linear(self.split_channels,
-                               self.split_channels)
-        # linear projection to obtain values horizontally
-        self.p_v_h = nn.Linear(self.split_channels,
-                               self.split_channels)
-
-        # linear projection to obtain queries vertically
-        self.p_q_v = nn.Linear(self.split_channels,
-                               self.split_channels)
-        # linear projection to obtain keys vertically
-        self.p_k_v = nn.Linear(self.split_channels,
-                               self.split_channels)
-        # linear projection to obtain values vertically
-        self.p_v_v = nn.Linear(self.split_channels,
-                               self.split_channels)
+        # In the implementation found in the official repository
+        # queries, keys and values are computed using a convolution
+        # whereas on the paper, it is said that it is a linear projection
+        # I decided to stick with the implementation found on the repo.
+        self.conv_h = nn.Conv2d(self.split_channels,
+                                3*self.split_channels,
+                                kernel_size=1,
+                                padding=0
+                                )
+        self.conv_v = nn.Conv2d(self.split_channels,
+                                3*self.split_channels,
+                                kernel_size=1,
+                                padding=0
+                                )
 
         self.attn = MultiHeadAttention(heads)
 
@@ -156,21 +151,51 @@ class InterSA(nn.Module):
         if len(sz) != 4:
             raise ValueError(f"Input has wrong number of dimensions: \
                                expected 4, got {len(sz)}")
-        batch_size = sz[batch_dim]
+
         x = rearrange(x,
-                      "b c h w -> b h w c")
+                      "b c h w -> b h w c"
+                      )
         x = self.l_norm(x)
         x = rearrange(x,
-                      "b h w c -> b c h w")
+                      "b h w c -> b c h w"
+                      )
         x = self.conv1(x)
 
         x_horiz, x_vert = torch.chunk(x, chunks=2, dim=1)
-  
+
+        q_horiz, k_horiz, v_horiz = torch.chunk(self.conv_h(x_horiz), 3, dim=1)
+        q_vert, k_vert, v_vert = torch.chunk(self.conv_h(x_vert), 3, dim=1)
+
+        q_horiz = rearrange(q_horiz, "b c h w -> b h (c w)")
+        k_horiz = rearrange(k_horiz, "b c h w -> b h (c w)")
+        v_horiz = rearrange(v_horiz, "b c h w -> b h (c w)")
+
+        q_vert = rearrange(q_vert, "b c h w -> b w (c h)")
+        k_vert = rearrange(k_vert, "b c h w -> b w (c h)")
+        v_vert = rearrange(v_vert, "b c h w -> b w (c h)")
+
+        # (b h) w d
+        attn_horiz = self.attn(q_horiz, k_horiz, v_horiz)
+        attn_horiz = rearrange(attn_horiz,
+                               "b h (d w) -> b d h w",
+                               d=self.split_channels)
+
+        # (b w) h d
+        attn_vert = self.attn(q_vert, k_vert, v_vert)
+        attn_vert = rearrange(attn_vert,
+                              "b w (d h) -> b d h w",
+                              d=self.split_channels)
+
+        attn_out = self.conv2(torch.cat((attn_horiz, attn_vert), dim=1)) + input_f
+
+        x = self.mlp(attn_out)
+
+        return x
 
 
 if __name__ == "__main__":
     x = torch.randn([100, 10, 100, 100])
-    intra = IntraSA(channels=10)
+    intra = InterSA(channels=10)
 
     res = intra(x)
     print(res.shape)
