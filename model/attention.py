@@ -8,19 +8,21 @@ class MLPBlock(nn.Module):
     # taken from original repository of the paper (Not much information about this
     # module on the paper)
     def __init__(self, in_channels):
-        self.l_norm = nn.LayerNorm(self.channels)
-        self.fc1 = nn.Linear(in_channels,
-                             in_channels * 4
+        super().__init__()
+        self.in_channels = in_channels
+        self.l_norm = nn.LayerNorm(self.in_channels)
+        self.fc1 = nn.Linear(self.in_channels,
+                             self.in_channels * 4
                              )
-        self.fc2 = nn.Linear(in_channels*4,
-                             in_channels
+        self.fc2 = nn.Linear(self.in_channels*4,
+                             self.in_channels
                              )
         self.activation = nn.GELU()
-        self.cpe = nn.Conv2d(in_channels,
-                             in_channels,
+        self.cpe = nn.Conv2d(self.in_channels,
+                             self.in_channels,
                              kernel_size=3,
                              padding=1,
-                             groups=in_channels
+                             groups=self.in_channels
                              )
         self._init_weights()
 
@@ -32,12 +34,13 @@ class MLPBlock(nn.Module):
         nn.init.normal_(self.fc2.bias, std=1e-6)
 
     def forward(self, x):
+        _, _, height, width = x.shape
         x = rearrange(x, "b c h w -> b (h w) c")
         in_f = x
         x = self.l_norm(x)
         x = self.activation(self.fc1(x))
         x = self.fc2(x) + in_f
-        x = rearrange(x, "b (h w) c -> b c h w")
+        x = rearrange(x, "b (h w) c -> b c h w", h=height, w=width)
         x = self.cpe(x) + x
         return x
 
@@ -50,7 +53,7 @@ class Attention(nn.Module):
 
     def forward(self, q, k, v):
         _, _, c = q.size()
-        if len(c) % 5 != 0:
+        if c % 5 != 0:
             raise ValueError("Number of heads should divide \
                               the number of channels")
         # I am already transposing the tensors to allow matrix multiplication
@@ -132,7 +135,7 @@ class IntraSA(nn.Module):
         x = self.l_norm(x)
         x = rearrange(x,
                       "b h w c -> b c h w")
-        x = self.conv(x)
+        x = self.conv1(x)
 
         # Dividing the number of channels
         x_horiz, x_vert = torch.chunk(x, chunks=2, dim=1)
@@ -172,10 +175,8 @@ class IntraSA(nn.Module):
 
 
 if __name__ == "__main__":
-    q = torch.randn([100, 12, 100])
-    k = torch.randn([100, 12, 100])
-    v = torch.randn([100, 12, 100])
-    att = Attention(5)
+    x = torch.randn([100, 10, 100, 100])
+    intra = IntraSA(channels=10)
 
-    res = att(q, k, v)
+    res = intra(x)
     print(res.shape)
