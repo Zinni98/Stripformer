@@ -1,4 +1,6 @@
+import torch
 import torch.nn as nn
+from attention import AttentionBlocks
 
 
 class FEB(nn.Module):
@@ -82,4 +84,71 @@ class Decoder(nn.Module):
 
     def __init__(self):
         super().__init__()
-        pass
+
+        self.activation = nn.LeakyReLU(.2, inplace=True)
+
+        self.upsample_layer1 = nn.Sequential(nn.ConvTranspose2d(in_channels=320,
+                                                                out_channels=192,
+                                                                kernel_size=4,
+                                                                stride=2,
+                                                                padding=1),
+                                             self.activation)
+
+        self.conv_layer1 = nn.Sequential(nn.Conv2d(in_channels=192+128,
+                                                   out_channels=192,
+                                                   kernel_size=1,
+                                                   padding=0),
+                                         self.activation)
+
+        self.att_layer = AttentionBlocks(blocks=3,
+                                         channels=192,
+                                         heads=3)
+
+        self.upsample_layer2 = nn.Sequential(nn.ConvTranspose2d(in_channels=192,
+                                                                out_channels=64,
+                                                                kernel_size=4,
+                                                                stride=2,
+                                                                padding=1),
+                                             self.activation)
+
+        self.res_layer1 = nn.Sequential(nn.Conv2d(in_channels=128,
+                                                  out_channels=64,
+                                                  kernel_size=1,
+                                                  padding=0),
+                                        self.activation,
+                                        nn.Conv2d(in_channels=64,
+                                                  out_channels=64,
+                                                  kernel_size=3,
+                                                  padding=1))
+
+        self.res_layer2 = nn.Sequential(nn.Conv2d(in_channels=64,
+                                                  out_channels=64,
+                                                  kernel_size=3,
+                                                  padding=1),
+                                        self.activation,
+                                        nn.Conv2d(in_channels=64,
+                                                  out_channels=64,
+                                                  kernel_size=3,
+                                                  padding=1))
+
+        self.conv_layer2 = nn.Sequential(nn.Conv2d(in_channels=64,
+                                                   out_channels=3,
+                                                   kernel_size=3,
+                                                   padding=1),
+                                         self.activation)
+
+    def forward(self, x, residual_1, residual_2):
+        x = self.upsample_layer1(x)
+
+        x = self.conv_layer1(torch.concat((x, residual_1), dim=1))
+        x = self.att_layer(x)
+
+        x = self.upsample_layer2(x)
+
+        x = self.activation(self.res_layer1(torch.cat((x, residual_2), dim=1)) + x)
+
+        x = self.activation(self.res_layer2(x) + x)
+
+        x = self.conv_layer2(x)
+
+        return x
