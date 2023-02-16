@@ -193,9 +193,33 @@ class InterSA(nn.Module):
         return x
 
 
+class AttentionBlocks(nn.Module):
+    def __init__(self, blocks, channels, heads):
+        """
+        Creates a module having a number of IntraSA and InterSA blocks,
+        passed as parameter
+
+        Parameters
+        ----------
+        blocks : int
+            Number of IntraSA and IterSA blocks
+        """
+        super().__init__()
+
+        self.layers = nn.ModuleList([sub for i in range(blocks)
+                                     for sub in (IntraSA(channels, heads),
+                                                 InterSA(channels, heads))])
+
+    def forward(self, x):
+        for i, _ in enumerate(self.layers):
+            x = self.layers[i](x)
+
+        return x
+
+
 if __name__ == "__main__":
     x = torch.randn([100, 10, 100, 100])
-    intra = InterSA(channels=10)
+    intra = AttentionBlocks(2, 10, 5)
 
     res = intra(x)
     print(res.shape)

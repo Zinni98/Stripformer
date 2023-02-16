@@ -4,16 +4,13 @@ import torch.nn as nn
 class FEB(nn.Module):
     def __init__(self,
                  in_channels: int,
-                 out_channels: int,
-                 mid_channels: int = None
+                 mid_channels: int,
+                 out_channels: int
                  ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        if not mid_channels:
-            self.mid_channels = in_channels
-        else:
-            self.mid_channels = mid_channels
+        self.mid_channels = mid_channels
 
         self.activation = nn.LeakyReLU(.2, inplace=True)
 
@@ -79,3 +76,10 @@ class FEB(nn.Module):
         x = self.downsample(res)
 
         return x, res
+
+
+class Decoder(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        pass
