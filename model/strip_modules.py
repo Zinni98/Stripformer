@@ -152,3 +152,10 @@ class Decoder(nn.Module):
         x = self.conv_layer2(x)
 
         return x
+
+
+if __name__ == "__main__":
+    x = torch.randn([2, 3, 10, 10])
+    f = FEB(3, 64, 128)
+
+    f(x)
