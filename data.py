@@ -67,3 +67,8 @@ class GOPRODataset(Dataset):
 
     def __len__(self):
         return len(self.ground_truth_images)
+
+
+if __name__ == "__main__":
+    ds = GOPRODataset("./GOPRO_Large")
+    print(ds[0])
