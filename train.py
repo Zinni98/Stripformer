@@ -25,5 +25,4 @@ class Trainer(nn.Module):
 
         for e in self.epochs:
 
-
-
+            pass
