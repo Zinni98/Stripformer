@@ -133,3 +133,4 @@ run.ipynb
 GOPRO_Large/
 *.vscode/
 .DS_Store
+saved_models/
