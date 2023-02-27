@@ -6,4 +6,4 @@ epochs = 1
 batch_size = 128
 max_lr = 1e-4
 min_lr = 1e-7
-wandb = False
+use_wandb = False
