@@ -17,7 +17,8 @@ class Trainer(nn.Module):
                  go_pro_test_loader: torch.utils.data.Dataloader = None,
                  save_path: str = None,
                  max_lr: float = 1e-4,
-                 min_lr: float = 1e-7):
+                 min_lr: float = 1e-7,
+                 use_wandb: bool = False):
         """
         Parameters
         ----------
@@ -54,18 +55,19 @@ class Trainer(nn.Module):
                                            self.epochs,
                                            eta_min=self.min_lr)
         self.save_path = save_path
-
         self.psnr = PeakSignalNoiseRatio()
+        self.wandb = use_wandb
 
-        self.run = wandb.init(project="stripformer",
-                              tags=["stripformer", "siv"])
+        if self.wandb:
+            self.run = wandb.init(project="stripformer",
+                                  tags=["stripformer", "siv"])
 
-        wandb.config = {
-            "epochs": self.epochs,
-            "learning_rate": self.lr,
-            "batch_size": self.batch_size,
-            "model": "stripformer"
-        }
+            wandb.config = {
+                "epochs": self.epochs,
+                "learning_rate": self.lr,
+                "batch_size": self.batch_size,
+                "model": "stripformer"
+            }
 
     def train(self):
         self.network.train()
@@ -81,7 +83,8 @@ class Trainer(nn.Module):
         if self.save_path:
             torch.save(self.network.state_dict(), self.save_path)
 
-        wandb.finish()
+        if self.wandb:
+            wandb.finish()
 
     def _training_step(self):
         samples = 0
@@ -110,9 +113,9 @@ class Trainer(nn.Module):
                 with torch.no_grad:
                     psnr = self.psnr(out, sharp_img)
                     cumulative_psnr += psnr.item()
-
-        wandb.log({"psnr": cumulative_psnr/samples,
-                   "loss": cumulative_loss/samples})
+        if self.wandb:
+            wandb.log({"psnr": cumulative_psnr/samples,
+                       "loss": cumulative_loss/samples})
         self.scheduler.step()
 
     def _test_step(self):
