@@ -1,5 +1,5 @@
 import os
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 from torchvision import transforms
 
@@ -67,6 +67,16 @@ class GOPRODataset(Dataset):
 
     def __len__(self):
         return len(self.ground_truth_images)
+
+
+def get_data(root, batch_size):
+    train_set = GOPRODataset(root)
+    test_set = GOPRODataset(root, training=False)
+
+    train_loader = DataLoader(train_set, batch_size)
+    test_loader = DataLoader(test_set, batch_size)
+
+    return train_set, test_set, train_loader, test_loader
 
 
 if __name__ == "__main__":
