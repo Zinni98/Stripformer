@@ -1,7 +1,7 @@
 import torch.nn as nn
 from einops import rearrange
 import torch
-from misc import MultiHeadAttention, MLPBlock
+from .misc import MultiHeadAttention, MLPBlock
 
 
 class IntraSA(nn.Module):

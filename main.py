@@ -58,3 +58,7 @@ def main_fn():
                       config.use_wandb
                       )
     trainer.train()
+
+
+if __name__ == "__main__":
+    main_fn()

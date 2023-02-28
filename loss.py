@@ -7,7 +7,7 @@ import torchvision.models as models
 class CharbonnierLoss(nn.Module):
     def __init__(self, eps=1e-3, reduction="mean"):
         super().__init__()
-        if reduction != "mean" or reduction != "sum":
+        if reduction != "mean" and reduction != "sum":
             raise ValueError("Reduction type not supported")
         else:
             self.reduction = reduction
@@ -60,7 +60,7 @@ class EdgeLoss(nn.Module):
 class Vgg19(torch.nn.Module):
     def __init__(self, requires_grad=False):
         super(Vgg19, self).__init__()
-        vgg_pretrained_features = models.vgg19(pretrained=True).features
+        vgg_pretrained_features = models.vgg19(weights='VGG19_Weights.DEFAULT').features # noqa
         self.slice1 = torch.nn.Sequential()
 
         for x in range(12):
@@ -83,7 +83,8 @@ class ContrastLoss(nn.Module):
     def __init__(self, ablation=False):
 
         super(ContrastLoss, self).__init__()
-        self.vgg = Vgg19().cuda()
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.vgg = Vgg19().to(device)
         self.l1 = nn.L1Loss()
         self.ab = ablation
         self.down_sample_4 = nn.Upsample(scale_factor=1 / 4, mode='bilinear')
