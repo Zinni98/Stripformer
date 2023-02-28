@@ -91,7 +91,9 @@ class Trainer(nn.Module):
         cumulative_loss = 0
         cumulative_psnr = 0
         with tqdm(self.train_loader, unit="batch") as tepoch:
-            for batch_idx, blur_img, sharp_img in enumerate(tepoch):
+            for batch_idx, imgs in enumerate(tepoch):
+                blur_img = imgs[0]
+                sharp_img = imgs[1]
                 self.optimizer.zero_grad()
                 tepoch.set_description(f"{batch_idx} Batch")
 
