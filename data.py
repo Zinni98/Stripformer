@@ -25,7 +25,11 @@ class GOPRODataset(Dataset):
         else:
             self.root = os.path.join(root, "test")
 
-        self.transforms = img_transforms
+        if img_transforms is None:
+            # Default
+            self.transforms = transforms.Compose([transforms.ToTensor()])
+        else:
+            self.transforms = img_transforms
         self.gamma_blur = gamma_blur
 
         self.ground_truth_images, self.blur_images = self._get_images()
@@ -52,18 +56,18 @@ class GOPRODataset(Dataset):
         filenames = [filename.split(".")[0] for filename in os.listdir(path)]
         # Sorting to ensure correspondence between successive calls of the function
         filenames.sort()
-        convert_to_tensor = transforms.ToTensor()
         for filename in filenames:
             full_filename = filename + ".png"
             img_path = os.path.join(path, full_filename)
             img = Image.open(img_path)
-            tensor_img = convert_to_tensor(img)
-            res.append(tensor_img)
+            res.append(img)
 
         return res
 
     def __getitem__(self, index):
-        return self.blur_images[index], self.ground_truth_images[index]
+        blur_img = self.transforms(self.blur_images[index])
+        gt_img = self.transforms(self.ground_truth_images[index])
+        return blur_img, gt_img
 
     def __len__(self):
         return len(self.ground_truth_images)
