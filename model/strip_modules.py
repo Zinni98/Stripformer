@@ -141,7 +141,7 @@ class Decoder(nn.Module):
         x = self.upsample_layer1(x)
 
         x = self.conv_layer1(torch.concat((x, residual_1), dim=1))
-        x = self.att_layer(x)
+        # x = self.att_layer(x)
 
         x = self.upsample_layer2(x)
 
