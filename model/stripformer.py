@@ -17,7 +17,7 @@ class Stripformer(nn.Module):
         x, res2 = self.feature_embedding1(x)
         x, res1 = self.feature_embedding2(x)
 
-        # x = self.bottleneck(x)
+        x = self.bottleneck(x)
 
         x = self.dec(x, res1, res2)
 
