@@ -126,6 +126,7 @@ class Trainer(nn.Module):
         samples = 0
         cumulative_loss = 0
         cumulative_psnr = 0
+        self.network.eval()
         with torch.no_grad:
             with tqdm(self.train_loader, unit="batch") as tepoch:
                 for batch_idx, blur_img, sharp_img in enumerate(tepoch):
