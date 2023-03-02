@@ -114,9 +114,9 @@ class Trainer(nn.Module):
                 samples += blur_img.shape[0]
                 cumulative_loss += loss.item()
 
-                with torch.no_grad:
-                    psnr = self.psnr(out, sharp_img)
-                    cumulative_psnr += psnr.item()
+                psnr = self.psnr(out, sharp_img)
+                cumulative_psnr += psnr.item()
+
         if self.wandb:
             wandb.log({"psnr": cumulative_psnr/samples,
                        "loss": cumulative_loss/samples})
