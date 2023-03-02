@@ -117,6 +117,9 @@ class Trainer(nn.Module):
                 psnr = self.psnr(out, sharp_img)
                 cumulative_psnr += psnr.item()
 
+                tepoch.set_postfix({"psnr": cumulative_psnr/samples,
+                                    "loss": cumulative_loss/samples})
+
         if self.wandb:
             wandb.log({"psnr": cumulative_psnr/samples,
                        "loss": cumulative_loss/samples})
@@ -128,12 +131,12 @@ class Trainer(nn.Module):
         cumulative_psnr = 0
         self.network.eval()
         with torch.no_grad:
-            with tqdm(self.train_loader, unit="batch") as tepoch:
-                for batch_idx, blur_img, sharp_img in enumerate(tepoch):
+            with tqdm(self.test_loader, unit="batch") as tepoch:
+                for batch_idx, imgs in enumerate(tepoch):
                     tepoch.set_description(f"{batch_idx} Batch")
 
-                    blur_img = blur_img.to(self.device)
-                    sharp_img = sharp_img.to(self.device)
+                    blur_img = imgs[0].to(self.device)
+                    sharp_img = imgs[1].to(self.device)
 
                     with torch.cuda.amp.autocast():
                         out = self.network(blur_img)

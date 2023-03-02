@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 from .strip_modules import FEB, Decoder
-from .attention import AttentionBlocks
+from .attention_paper import AttentionBlocks
 
 
 class Stripformer(nn.Module):

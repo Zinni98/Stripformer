@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from .attention import AttentionBlocks
+from .attention_paper import AttentionBlocks
 
 
 class FEB(nn.Module):
