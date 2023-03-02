@@ -134,3 +134,4 @@ GOPRO_Large/
 *.vscode/
 .DS_Store
 saved_models/
+attention_paper.py

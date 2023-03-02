@@ -55,7 +55,7 @@ class Trainer(nn.Module):
                                            self.epochs,
                                            eta_min=self.min_lr)
         self.save_path = save_path
-        self.psnr = PeakSignalNoiseRatio()
+        self.psnr = PeakSignalNoiseRatio().to(self.device)
         self.wandb = use_wandb
         self._scaler = torch.cuda.amp.GradScaler()
 
