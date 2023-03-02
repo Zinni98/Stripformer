@@ -57,6 +57,7 @@ class Trainer(nn.Module):
         self.save_path = save_path
         self.psnr = PeakSignalNoiseRatio()
         self.wandb = use_wandb
+        self._scaler = torch.cuda.amp.GradScaler()
 
         if self.wandb:
             self.run = wandb.init(project="stripformer",
@@ -100,14 +101,15 @@ class Trainer(nn.Module):
                 blur_img = blur_img.to(self.device)
                 sharp_img = sharp_img.to(self.device)
 
-                out = self.network(blur_img)
+                with torch.cuda.amp.autocast():
+                    out = self.network(blur_img)
+                    loss = self.loss_fn(out, sharp_img, blur_img)
 
-                loss = self.loss_fn(out, sharp_img, blur_img)
+                self._scaler.scale(loss).backward()
 
-                loss.backward()
-
-                self.optimizer.step()
-                self.optimizer.zero_grad()
+                self._scaler.step(self.optimizer)
+                # self.optimizer.step()
+                self._scaler.update()
 
                 samples += blur_img.shape[0]
                 cumulative_loss += loss.item()
@@ -132,9 +134,9 @@ class Trainer(nn.Module):
                     blur_img = blur_img.to(self.device)
                     sharp_img = sharp_img.to(self.device)
 
-                    out = self.network(blur_img)
-
-                    loss = self.loss_fn(out, sharp_img, blur_img)
+                    with torch.cuda.amp.autocast():
+                        out = self.network(blur_img)
+                        loss = self.loss_fn(out, sharp_img, blur_img)
 
                     samples += blur_img.shape[0]
                     cumulative_loss += loss.item()
