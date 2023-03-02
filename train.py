@@ -3,7 +3,7 @@ import wandb
 import torch.nn as nn
 from tqdm import tqdm
 from torch.optim import Adam
-from torchmetrics import PeakSignalNoiseRatio
+from torchmetrics.functional import peak_signal_noise_ratio
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 
@@ -114,7 +114,7 @@ class Trainer(nn.Module):
                 samples += blur_img.shape[0]
                 cumulative_loss += loss.item()
 
-                psnr = self.psnr(out, sharp_img)
+                psnr = peak_signal_noise_ratio(out, sharp_img)
                 cumulative_psnr += psnr.item()
 
         if self.wandb:
