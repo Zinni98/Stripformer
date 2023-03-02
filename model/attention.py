@@ -81,22 +81,18 @@ class IntraSA(nn.Module):
                            "b d h w -> (b w) h d")
 
         # Splitting heads inside the attention module, not here
-        q_horiz = self.p_q_h(x_horiz)
-        k_horiz = self.p_k_h(x_horiz)
-        v_horiz = self.p_v_h(x_horiz)
-
-        q_vert = self.p_q_v(x_vert)
-        k_vert = self.p_k_v(x_vert)
-        v_vert = self.p_v_v(x_vert)
-
         # (b h) w d
-        attn_horiz = self.attn(q_horiz, k_horiz, v_horiz)
+        attn_horiz = self.attn(self.p_q_h(x_horiz),
+                               self.p_k_h(x_horiz),
+                               self.p_v_h(x_horiz))
         attn_horiz = rearrange(attn_horiz,
                                "(b h) w d -> b d h w",
                                b=batch_size)
 
         # (b w) h d
-        attn_vert = self.attn(q_vert, k_vert, v_vert)
+        attn_vert = self.attn(self.p_q_v(x_vert),
+                              self.p_k_v(x_vert),
+                              self.p_v_v(x_vert))
         attn_vert = rearrange(attn_vert,
                               "(b w) h d -> b d h w",
                               b=batch_size)
