@@ -124,6 +124,7 @@ class Trainer(nn.Module):
             wandb.log({"psnr": cumulative_psnr/samples,
                        "loss": cumulative_loss/samples})
         self.scheduler.step()
+        return cumulative_loss/samples, cumulative_psnr/samples
 
     def _test_step(self):
         samples = 0
@@ -147,5 +148,7 @@ class Trainer(nn.Module):
 
                     psnr = self.psnr(out, sharp_img)
                     cumulative_psnr += psnr.item()
+                    tepoch.set_postfix({"psnr": cumulative_psnr/samples,
+                                        "loss": cumulative_loss/samples})
 
         return cumulative_loss/samples, cumulative_psnr/samples
