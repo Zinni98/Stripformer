@@ -3,7 +3,7 @@ import wandb
 import torch.nn as nn
 from tqdm import tqdm
 from torch.optim import Adam
-from torchmetrics.functional import PeakSignalNoiseRatio
+from torchmetrics import PeakSignalNoiseRatio
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 
