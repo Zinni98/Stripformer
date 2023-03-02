@@ -28,7 +28,7 @@ class GOPRODataset(Dataset):
         if img_transforms is None:
             # Default
             self.transforms = transforms.Compose([transforms.ToTensor(),
-                                                  transforms.Resize((512, 512))])
+                                                  transforms.Resize((256, 256))])
         else:
             self.transforms = img_transforms
         self.gamma_blur = gamma_blur

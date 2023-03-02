@@ -1,7 +1,7 @@
 import torch.nn as nn
 from einops import rearrange
 import torch
-from .misc import MultiHeadAttention, MLPBlock
+from misc import MultiHeadAttention, MLPBlock
 
 
 class IntraSA(nn.Module):
@@ -198,7 +198,8 @@ class AttentionBlocks(nn.Module):
         Parameters
         ----------
         blocks : int
-            Number of IntraSA and IterSA blocks
+            Number of IntraSA and IterSA blocks. The number refers to the number of
+            couples of IntraSA and InterSA blocks
         """
         super().__init__()
 
