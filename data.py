@@ -28,7 +28,7 @@ class GOPRODataset(Dataset):
         if img_transforms is None:
             # Default
             self.transforms = transforms.Compose([transforms.ToTensor(),
-                                                  transforms.Resize((256, 256))])
+                                                  transforms.CenterCrop((512, 512))])
         else:
             self.transforms = img_transforms
         self.gamma_blur = gamma_blur
@@ -78,8 +78,8 @@ def get_data(root, batch_size):
     train_set = GOPRODataset(root)
     test_set = GOPRODataset(root, training=False)
 
-    train_loader = DataLoader(train_set, batch_size)
-    test_loader = DataLoader(test_set, batch_size)
+    train_loader = DataLoader(train_set, batch_size, shuffle=True)
+    test_loader = DataLoader(test_set, batch_size, shuffle=True)
 
     return train_set, test_set, train_loader, test_loader
 
