@@ -55,7 +55,8 @@ def main_fn():
                       path_to_saved_models,
                       config.max_lr,
                       config.min_lr,
-                      config.use_wandb
+                      config.use_wandb,
+                      config.accumulation_steps
                       )
     trainer.train()
 
