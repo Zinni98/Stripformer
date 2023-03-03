@@ -18,7 +18,8 @@ class Trainer(nn.Module):
                  save_path: str = None,
                  max_lr: float = 1e-4,
                  min_lr: float = 1e-7,
-                 use_wandb: bool = False):
+                 use_wandb: bool = False,
+                 accumulation_steps: int = 0):
         """
         Parameters
         ----------
@@ -58,6 +59,7 @@ class Trainer(nn.Module):
         self.psnr = PeakSignalNoiseRatio().to(self.device)
         self.wandb = use_wandb
         self._scaler = torch.cuda.amp.GradScaler()
+        self.accumulation_steps = accumulation_steps
 
         if self.wandb:
             self.run = wandb.init(project="stripformer",
@@ -103,13 +105,18 @@ class Trainer(nn.Module):
 
                 with torch.cuda.amp.autocast():
                     out = self.network(blur_img)
-                    loss = self.loss_fn(out, sharp_img, blur_img)
+                    if self.accumulation_steps == 0:
+                        loss = self.loss_fn(out, sharp_img, blur_img)
+                    else:
+                        loss = self.loss_fn(out, sharp_img, blur_img) / self.accumulation_steps # noqa
 
                 self._scaler.scale(loss).backward()
 
-                self._scaler.step(self.optimizer)
-                # self.optimizer.step()
-                self._scaler.update()
+                if (((batch_idx + 1) % self.accumulation_steps == 0) or
+                   (batch_idx + 1) == len(self.train_loader)):
+                    self._scaler.step(self.optimizer)
+                    # self.optimizer.step()
+                    self._scaler.update()
 
                 samples += blur_img.shape[0]
                 cumulative_loss += loss.item()
