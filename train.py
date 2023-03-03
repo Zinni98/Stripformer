@@ -114,8 +114,9 @@ class Trainer(nn.Module):
                 samples += blur_img.shape[0]
                 cumulative_loss += loss.item()
 
-                psnr = self.psnr(out, sharp_img)
-                cumulative_psnr += psnr.item()
+                with torch.no_grad():
+                    psnr = self.psnr(out, sharp_img)
+                    cumulative_psnr += psnr.item()
 
                 tepoch.set_postfix({"psnr": cumulative_psnr/samples,
                                     "loss": cumulative_loss/samples})
@@ -131,7 +132,7 @@ class Trainer(nn.Module):
         cumulative_loss = 0
         cumulative_psnr = 0
         self.network.eval()
-        with torch.no_grad:
+        with torch.no_grad():
             with tqdm(self.test_loader, unit="batch") as tepoch:
                 for batch_idx, imgs in enumerate(tepoch):
                     tepoch.set_description(f"{batch_idx} Batch")
