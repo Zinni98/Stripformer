@@ -108,6 +108,7 @@ class Trainer(nn.Module):
                     if self.accumulation_steps == 0:
                         loss = self.loss_fn(out, sharp_img, blur_img)
                     else:
+                        # Mean reduction of the loss
                         loss = self.loss_fn(out, sharp_img, blur_img) / self.accumulation_steps # noqa
 
                 self._scaler.scale(loss).backward()
