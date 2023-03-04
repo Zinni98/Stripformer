@@ -56,7 +56,6 @@ class GOPRODataset(Dataset):
                 blur_images.extend(blur)
                 blur_images.extend(blur_gamma)
 
-
         return ground_truth_images, blur_images
 
     def _get_imgs_from_path(self, path):

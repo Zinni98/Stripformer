@@ -41,7 +41,7 @@ def get_dirs():
 
 
 def main_fn():
-    path_to_gopro, path_to_saved_models = get_dirs()
+    path_to_gopro, path_to_saved_models, path_to_load_models = get_dirs()
     model = Stripformer()
     loss_fn = StipformerLoss()
     _, _, train_loader, test_loader = get_data(path_to_gopro,
@@ -53,6 +53,7 @@ def main_fn():
                       train_loader,
                       test_loader,
                       path_to_saved_models,
+                      path_to_load_models,
                       config.max_lr,
                       config.min_lr,
                       config.use_wandb,
