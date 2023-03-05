@@ -5,6 +5,7 @@ from data import get_data, get_data_pretrain
 from train import Trainer, TrainerPretrainer
 from loss import StipformerLoss
 from model.stripformer import Stripformer
+from torchvision import transforms
 
 
 def check_valid_dir(dir: str):
@@ -55,21 +56,21 @@ def main_fn():
     path_to_gopro, path_to_saved_models, path_to_load_models = get_dirs()
     model = Stripformer()
     loss_fn = StipformerLoss()
-    transforms = dict()
-    transforms["train"] = transforms.Compose([transforms.ToTensor(),
-                                              transforms.CenterCrop((config.train_img_size,  # noqa
-                                                                     config.train_img_size))])  # noqa
-    transforms["test"] = transforms.Compose([transforms.ToTensor(),
-                                             transforms.CenterCrop((config.train_img_size,  # noqa
-                                                                    config.train_img_size))])  # noqa
+    img_transforms = dict()
+    img_transforms["train"] = transforms.Compose([transforms.ToTensor(),
+                                                  transforms.CenterCrop((config.train_img_size,  # noqa
+                                                                         config.train_img_size))])  # noqa
+    img_transforms["test"] = transforms.Compose([transforms.ToTensor(),
+                                                 transforms.CenterCrop((config.train_img_size,  # noqa
+                                                                        config.train_img_size))])  # noqa
     if config.pretrain:
-        transforms["pretrain"] = transforms.Compose([transforms.ToTensor(),
-                                                    transforms.CenterCrop((config.pre_train_img_size,  # noqa
-                                                                            config.pre_train_img_size))])  # noqa
+        img_transforms["pretrain"] = transforms.Compose([transforms.ToTensor(),
+                                                         transforms.CenterCrop((config.pre_train_img_size,  # noqa
+                                                                                config.pre_train_img_size))])  # noqa
 
         _, _, _, train_loader, pretrain_loader, test_loader = get_data_pretrain(path_to_gopro,  # noqa
                                                                                 config.batch_size,  # noqa
-                                                                                transforms  # noqa
+                                                                                img_transforms  # noqa
                                                                                 )
         trainer = TrainerPretrainer(config.epochs,
                                     model,
@@ -89,7 +90,7 @@ def main_fn():
 
         _, _, train_loader, test_loader = get_data(path_to_gopro,
                                                    config.batch_size,
-                                                   transforms
+                                                   img_transforms
                                                    )
 
         trainer = Trainer(config.epochs,
