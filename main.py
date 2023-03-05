@@ -2,7 +2,7 @@ import os
 import sys
 import config
 from data import get_data, get_data_pretrain
-from train import Trainer
+from train import Trainer, TrainerPretrainer
 from loss import StipformerLoss
 from model.stripformer import Stripformer
 
@@ -71,20 +71,20 @@ def main_fn():
                                                                              config.batch_size,  # noqa
                                                                              transforms  # noqa
                                                                              )
-        trainer = Trainer(config.epochs,
-                          model,
-                          config.batch_size,
-                          loss_fn,
-                          pretrain_loader,
-                          train_loader,
-                          test_loader,
-                          path_to_saved_models,
-                          path_to_load_models,
-                          config.max_lr,
-                          config.min_lr,
-                          config.use_wandb,
-                          config.accumulation_steps
-                          )
+        trainer = TrainerPretrainer(config.epochs,
+                                    model,
+                                    config.batch_size,
+                                    loss_fn,
+                                    pretrain_loader,
+                                    train_loader,
+                                    test_loader,
+                                    path_to_saved_models,
+                                    path_to_load_models,
+                                    config.max_lr,
+                                    config.min_lr,
+                                    config.use_wandb,
+                                    config.accumulation_steps
+                                    )
     else:
 
         _, _, train_loader, test_loader = get_data(path_to_gopro,

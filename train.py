@@ -84,23 +84,26 @@ class Trainer(nn.Module):
                 "model": "stripformer"
             }
 
-    def train(self):
+    def save_state_dict(self, e):
+        torch.save({"model_state_dict": self.network.state_dict(),
+                    "optim_state_dict": self.optimizer.state_dict(),
+                    "sched_state_dict": self.scheduler.state_dict(),
+                    "epoch": e
+                    }, self.save_path)
+
+    def train(self, loader=None):
         self.network.train()
         self.network.to(self.device)
-
+        loader = loader if loader else self.train_loader
         for e in range(self.current_epoch, self.epochs):
             print(f"----------- Epoch {e+1} -----------")
-            train_loss, train_psnr = self._training_epoch(self.train_loader)
+            train_loss, train_psnr = self._training_epoch(loader)
             test_loss, test_psnr = self._test_step()
-            print(f"Training loss: {train_loss} \t Training pnsr: {train_psnr} \n")
+            print(f"\nTraining loss: {train_loss} \t Training pnsr: {train_psnr} \n")
             print(f"Test loss: {test_loss} \t Test pnsr: {test_psnr} \n")
 
             if self.save_path:
-                torch.save({"model_state_dict": self.network.state_dict(),
-                            "optim_state_dict": self.optimizer.state_dict(),
-                            "sched_state_dict": self.scheduler.state_dict(),
-                            "epoch": e
-                            }, self.save_path)
+                self.save_state_dict()
 
         if self.wandb:
             wandb.finish()
@@ -178,3 +181,71 @@ class Trainer(nn.Module):
                                         "loss": cumulative_loss/samples})
 
         return cumulative_loss/samples, cumulative_psnr/samples
+
+
+class TrainerPretrainer(Trainer):
+    """
+    Same as trainer, but handles pretrain, managing
+    saving and restoring the model status considering
+    if pretrain has finished or not.
+    """
+    def __init__(self,
+                 train_epochs: int,
+                 pre_train_epochs: int,
+                 network: nn.Module,
+                 batch_size: int,
+                 loss_fn,
+                 go_pro_pre_train_loader,
+                 go_pro_train_loader,
+                 go_pro_test_loader=None,
+                 save_path: str = None,
+                 load_from_path: str = None,
+                 max_lr: float = 1e-4,
+                 min_lr: float = 1e-7,
+                 use_wandb: bool = False,
+                 accumulation_steps: int = 0):
+
+        self.pre_train_loader = go_pro_pre_train_loader
+        if load_from_path:
+            try:
+                self.pretrain_done = self.checkpoint["pre_train_done"]
+            except KeyError:
+                self.pre_train_done = True
+        else:
+            self.pre_train_done = False
+
+        self.pre_train_epochs = pre_train_epochs
+        self.train_epochs = train_epochs
+
+        epochs = train_epochs if self.pre_train_done else pre_train_epochs
+        super().__init__(epochs,
+                         network,
+                         batch_size,
+                         loss_fn,
+                         go_pro_train_loader,
+                         go_pro_test_loader,
+                         save_path,
+                         load_from_path,
+                         max_lr,
+                         min_lr,
+                         use_wandb,
+                         accumulation_steps)
+
+    def save_state_dict(self, e):
+        torch.save({"model_state_dict": self.network.state_dict(),
+                    "optim_state_dict": self.optimizer.state_dict(),
+                    "sched_state_dict": self.scheduler.state_dict(),
+                    "epoch": e,
+                    "pre_train_done": self.pre_train_done
+                    }, self.save_path)
+
+    def train(self):
+        if self.pre_train_done:
+            super().train()
+        else:
+            super().train(self.pre_train_loader)
+            self.pre_train_done = True
+            # Epochs = 0 because training should be done
+            self.save_state_dict(0)
+            self.epochs = self.train_epochs
+            super().train()
