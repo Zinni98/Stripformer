@@ -205,6 +205,18 @@ class TrainerPretrainer(Trainer):
                  use_wandb: bool = False,
                  accumulation_steps: int = 0):
 
+        super().__init__(0,
+                         network,
+                         batch_size,
+                         loss_fn,
+                         go_pro_train_loader,
+                         go_pro_test_loader,
+                         save_path,
+                         load_from_path,
+                         max_lr,
+                         min_lr,
+                         False,  # Set here wandb
+                         accumulation_steps)
         self.pre_train_loader = go_pro_pre_train_loader
         if load_from_path:
             try:
@@ -217,19 +229,23 @@ class TrainerPretrainer(Trainer):
         self.pre_train_epochs = pre_train_epochs
         self.train_epochs = train_epochs
 
-        epochs = train_epochs if self.pre_train_done else pre_train_epochs
-        super().__init__(epochs,
-                         network,
-                         batch_size,
-                         loss_fn,
-                         go_pro_train_loader,
-                         go_pro_test_loader,
-                         save_path,
-                         load_from_path,
-                         max_lr,
-                         min_lr,
-                         use_wandb,
-                         accumulation_steps)
+        self.epochs = train_epochs if self.pre_train_done else pre_train_epochs
+
+        # Redefinition because I need to know the number of pre_train_epochs
+        self.scheduler = CosineAnnealingLR(self.optimizer,
+                                           self.epochs,
+                                           eta_min=self.min_lr)
+        self.wandb = use_wandb
+        if self.wandb:
+            self.run = wandb.init(project="stripformer",
+                                  tags=["stripformer", "siv"])
+
+            wandb.config = {
+                "epochs": self.epochs,
+                "learning_rate": self.lr,
+                "batch_size": self.batch_size,
+                "model": "stripformer"
+            }
 
     def save_state_dict(self, e):
         torch.save({"model_state_dict": self.network.state_dict(),
@@ -248,4 +264,8 @@ class TrainerPretrainer(Trainer):
             # Epochs = 0 because training should be done
             self.save_state_dict(0)
             self.epochs = self.train_epochs
+            # Redefinition with new number of epochs
+            self.scheduler = CosineAnnealingLR(self.optimizer,
+                                               self.epochs,
+                                               eta_min=self.min_lr)
             super().train()
