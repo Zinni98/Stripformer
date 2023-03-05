@@ -73,6 +73,7 @@ def main_fn():
                                                                                 img_transforms  # noqa
                                                                                 )
         trainer = TrainerPretrainer(config.epochs,
+                                    config.pre_train_epochs,
                                     model,
                                     config.batch_size,
                                     loss_fn,
