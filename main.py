@@ -67,10 +67,10 @@ def main_fn():
                                                     transforms.CenterCrop((config.pre_train_img_size,  # noqa
                                                                             config.pre_train_img_size))])  # noqa
 
-        _, _, train_loader, pretrain_loader, test_loader = get_data_pretrain(path_to_gopro,  # noqa
-                                                                             config.batch_size,  # noqa
-                                                                             transforms  # noqa
-                                                                             )
+        _, _, _, train_loader, pretrain_loader, test_loader = get_data_pretrain(path_to_gopro,  # noqa
+                                                                                config.batch_size,  # noqa
+                                                                                transforms  # noqa
+                                                                                )
         trainer = TrainerPretrainer(config.epochs,
                                     model,
                                     config.batch_size,
