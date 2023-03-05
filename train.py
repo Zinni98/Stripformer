@@ -13,7 +13,6 @@ class Trainer(nn.Module):
                  network: nn.Module,
                  batch_size: int,
                  loss_fn,
-                 go_pro_pre_train_loader,
                  go_pro_train_loader,
                  go_pro_test_loader=None,
                  save_path: str = None,
@@ -48,7 +47,6 @@ class Trainer(nn.Module):
         self.current_epoch = 0
         self.network = network
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.pre_train_loader = go_pro_pre_train_loader
         self.train_loader = go_pro_train_loader
         self.test_loader = go_pro_test_loader
         self.lr = max_lr
@@ -64,6 +62,7 @@ class Trainer(nn.Module):
         self.accumulation_steps = accumulation_steps
 
         self.load_from_path = load_from_path
+
         if self.load_from_path:
             self.checkpoint = torch.load(self.load_from_path)
             self.network.load_state_dict(self.checkpoint["model_state_dict"])
@@ -89,9 +88,9 @@ class Trainer(nn.Module):
         self.network.train()
         self.network.to(self.device)
 
-        for e in range(self.epochs):
+        for e in range(self.current_epoch, self.epochs):
             print(f"----------- Epoch {e+1} -----------")
-            train_loss, train_psnr = self._training_step()
+            train_loss, train_psnr = self._training_epoch(self.train_loader)
             test_loss, test_psnr = self._test_step()
             print(f"Training loss: {train_loss} \t Training pnsr: {train_psnr} \n")
             print(f"Test loss: {test_loss} \t Test pnsr: {test_psnr} \n")
@@ -106,11 +105,11 @@ class Trainer(nn.Module):
         if self.wandb:
             wandb.finish()
 
-    def _training_step(self, pretrain=False):
+    def _training_epoch(self, loader):
         samples = 0
         cumulative_loss = 0
         cumulative_psnr = 0
-        loader = self.pre_train_loader if pretrain else self.train_loader
+        loader = loader
         with tqdm(loader, unit="batch") as tepoch:
             for batch_idx, imgs in enumerate(tepoch):
                 blur_img = imgs[0]

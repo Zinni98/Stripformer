@@ -80,14 +80,40 @@ class GOPRODataset(Dataset):
         return len(self.ground_truth_images)
 
 
-def get_data(root, batch_size):
-    train_set = GOPRODataset(root)
-    test_set = GOPRODataset(root, training=False)
+def get_data(root, batch_size, transforms):
+    train_set = GOPRODataset(root,
+                             img_transforms=transforms["train"])
+    test_set = GOPRODataset(root,
+                            training=False,
+                            img_transforms=transforms["test"])
 
-    train_loader = DataLoader(train_set, batch_size, shuffle=True)
-    test_loader = DataLoader(test_set, batch_size, shuffle=True)
+    train_loader = DataLoader(train_set,
+                              batch_size,
+                              shuffle=True)
+    test_loader = DataLoader(test_set,
+                             batch_size,
+                             shuffle=True)
 
     return train_set, test_set, train_loader, test_loader
+
+
+def get_data_pretrain(root, batch_size, transforms):
+    train_set, test_set, train_loader, test_loader = get_data(root,
+                                                              batch_size,
+                                                              transforms)
+
+    pretrain_set = GOPRODataset(root,
+                                img_transforms=transforms["pretrain"])
+    pretrain_loader = DataLoader(pretrain_set,
+                                 batch_size,
+                                 shuffle=True)
+
+    return (train_set,
+            pretrain_set,
+            test_set,
+            train_loader,
+            pretrain_loader,
+            test_loader)
 
 
 if __name__ == "__main__":
