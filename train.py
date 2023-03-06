@@ -92,11 +92,11 @@ class Trainer(nn.Module):
                     }, self.save_path)
 
     def train(self, loader=None):
-        self.network.train()
         self.network.to(self.device)
         loader = loader if loader else self.train_loader
         for e in range(self.current_epoch, self.epochs):
             print(f"----------- Epoch {e+1} -----------")
+            self.network.train()
             train_loss, train_psnr = self._training_epoch(loader)
             test_loss, test_psnr = self._test_step()
             print(f"\nTraining loss: {train_loss} \t Training pnsr: {train_psnr} \n")
