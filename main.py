@@ -41,13 +41,17 @@ def get_dirs():
     else:
         raise ValueError("Invalid path, the filename should end with .tar extention")
 
-    if config.load_dir and config.load_dir.endswith(".tar"):
-        if config.load_dir.startswith("./"):
-            path_to_load_models = os.path.join(root_dir, config.load_dir[2:])
+    if config.load_dir:
+        if config.load_dir.endswith(".tar"):
+            if config.load_dir.startswith("./"):
+                path_to_load_models = os.path.join(root_dir, config.load_dir[2:])
+            else:
+                path_to_load_models = config.load_dir
         else:
-            path_to_load_models = config.load_dir
+            raise ValueError("Invalid path, the filename should end with .tar extension")
+    
     else:
-        raise ValueError("Invalid path, the filename should end with .tar extension")
+        path_to_load_models = None
 
     return path_to_gopro, path_to_saved_models, path_to_load_models
 
