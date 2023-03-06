@@ -41,7 +41,7 @@ def get_dirs():
     else:
         raise ValueError("Invalid path, the filename should end with .tar extention")
 
-    if config.load_dir.endswith(".tar"):
+    if config.load_dir and config.load_dir.endswith(".tar"):
         if config.load_dir.startswith("./"):
             path_to_load_models = os.path.join(root_dir, config.load_dir[2:])
         else:
