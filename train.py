@@ -103,7 +103,7 @@ class Trainer(nn.Module):
             print(f"Test loss: {test_loss} \t Test pnsr: {test_psnr} \n")
 
             if self.save_path:
-                self.save_state_dict()
+                self.save_state_dict(e)
 
         if self.wandb:
             wandb.finish()

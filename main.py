@@ -48,8 +48,9 @@ def get_dirs():
             else:
                 path_to_load_models = config.load_dir
         else:
-            raise ValueError("Invalid path, the filename should end with .tar extension")
-    
+            raise ValueError("Invalid path, the filename \
+                             should end with .tar extension")
+
     else:
         path_to_load_models = None
 
