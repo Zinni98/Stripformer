@@ -2,7 +2,7 @@
 gopro_dir = "./GOPRO_Large"
 saved_models_dir = "./saved_models/run.tar"  # Where to save the model during training. Set to None If don't want to save
 colab_dir = "/content/gdrive/My Drive/Stripformer/"  # Put here the directory of the repo if you are running in colab
-load_dir = None # "./saved_models/run.tar"  # Where to find already trained model
+load_dir = "./saved_models/run.tar"  # Where to find already trained model
 pretrain = True
 pre_train_epochs = 20
 epochs = 20
