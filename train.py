@@ -151,9 +151,14 @@ class Trainer(nn.Module):
 
         if self.wandb:
             wandb.log({"psnr": cumulative_psnr/samples,
-                       "loss": cumulative_loss/samples})
+                       "loss": cumulative_loss/samples,
+                       "lr": self._get_lr()})
         self.scheduler.step()
         return cumulative_loss/samples, cumulative_psnr/samples
+
+    def _get_lr(self):
+        for pg in self.optimizer.param_groups:
+            return pg["lr"]
 
     def _test_step(self):
         samples = 0

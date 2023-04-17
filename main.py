@@ -62,16 +62,16 @@ def main_fn():
     model = Stripformer()
     loss_fn = StipformerLoss()
     img_transforms = dict()
-    img_transforms["train"] = transforms.Compose([transforms.ToTensor(),
-                                                  transforms.CenterCrop((config.train_img_size,  # noqa
-                                                                         config.train_img_size))])  # noqa
-    img_transforms["test"] = transforms.Compose([transforms.ToTensor(),
-                                                 transforms.CenterCrop((config.train_img_size,  # noqa
-                                                                        config.train_img_size))])  # noqa
+    img_transforms["train"] = transforms.Compose([transforms.RandomCrop((config.train_img_size,  # noqa
+                                                                         config.train_img_size)),
+                                                  transforms.ToTensor()])
+    img_transforms["test"] = transforms.Compose([transforms.CenterCrop((config.train_img_size,  # noqa
+                                                                        config.train_img_size)),
+                                                  transforms.ToTensor()])
     if config.pretrain:
-        img_transforms["pretrain"] = transforms.Compose([transforms.ToTensor(),
-                                                         transforms.CenterCrop((config.pre_train_img_size,  # noqa
-                                                                                config.pre_train_img_size))])  # noqa
+        img_transforms["pretrain"] = transforms.Compose([transforms.RandomCrop((config.train_img_size,  # noqa
+                                                                                config.train_img_size)),
+                                                         transforms.ToTensor()])
 
         _, _, _, train_loader, pretrain_loader, test_loader = get_data_pretrain(path_to_gopro,  # noqa
                                                                                 config.batch_size,  # noqa
