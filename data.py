@@ -34,6 +34,8 @@ class GOPRODataset(Dataset):
         self.gamma_blur = gamma_blur
 
         self.ground_truth_images, self.blur_images = self._get_images()
+        self.length = len(self.ground_truth_images)
+
 
     def _get_images(self):
         ground_truth_images = []
@@ -72,12 +74,12 @@ class GOPRODataset(Dataset):
         return res
 
     def __getitem__(self, index):
-        blur_img = self.transforms(self.blur_images[index])
-        gt_img = self.transforms(self.ground_truth_images[index])
+        blur_img, gt_img = self.transforms(self.blur_images[index],
+                                           self.ground_truth_images[index])
         return blur_img, gt_img
 
     def __len__(self):
-        return len(self.ground_truth_images)
+        return self.length
 
 
 def get_data(root, batch_size, transforms):

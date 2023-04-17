@@ -1,11 +1,11 @@
 import os
 import sys
 import config
+from  transforms import *
 from data import get_data, get_data_pretrain
 from train import Trainer, TrainerPretrainer
 from loss import StipformerLoss
 from model.stripformer import Stripformer
-from torchvision import transforms
 
 
 def check_valid_dir(dir: str):
@@ -39,7 +39,7 @@ def get_dirs():
         else:
             path_to_saved_models = config.saved_models_dir
     else:
-        raise ValueError("Invalid path, the filename should end with .tar extention")
+        raise ValueError("Invalid path, the filename should end with .tar extension")
 
     if config.load_dir:
         if config.load_dir.endswith(".tar"):
@@ -62,16 +62,16 @@ def main_fn():
     model = Stripformer()
     loss_fn = StipformerLoss()
     img_transforms = dict()
-    img_transforms["train"] = transforms.Compose([transforms.RandomCrop((config.train_img_size,  # noqa
-                                                                         config.train_img_size)),
-                                                  transforms.ToTensor()])
-    img_transforms["test"] = transforms.Compose([transforms.CenterCrop((config.train_img_size,  # noqa
-                                                                        config.train_img_size)),
-                                                  transforms.ToTensor()])
+    img_transforms["train"] = Compose2Imgs([RC2Imgs((config.train_img_size,  # noqa
+                                                     config.train_img_size)),
+                                            ToTensor2Imgs()])
+    img_transforms["test"] = Compose2Imgs([CenterCrop2Imgs((config.train_img_size,  # noqa
+                                                            config.train_img_size)),
+                                           ToTensor2Imgs()])
     if config.pretrain:
-        img_transforms["pretrain"] = transforms.Compose([transforms.RandomCrop((config.train_img_size,  # noqa
-                                                                                config.train_img_size)),
-                                                         transforms.ToTensor()])
+        img_transforms["pretrain"] = Compose2Imgs([RC2Imgs((config.train_img_size,  # noqa
+                                                            config.train_img_size)),
+                                                   ToTensor2Imgs()])
 
         _, _, _, train_loader, pretrain_loader, test_loader = get_data_pretrain(path_to_gopro,  # noqa
                                                                                 config.batch_size,  # noqa
