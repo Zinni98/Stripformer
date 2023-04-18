@@ -130,7 +130,7 @@ dmypy.json
 
 # Custom
 run.ipynb
-GOPRO_Large/
+GOPRO_Large*
 *.vscode/
 .DS_Store
 saved_models/

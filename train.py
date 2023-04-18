@@ -98,9 +98,9 @@ class Trainer(nn.Module):
             print(f"----------- Epoch {e+1} -----------")
             self.network.train()
             train_loss, train_psnr = self._training_epoch(loader)
-            test_loss, test_psnr = self._test_step()
+            # test_loss, test_psnr = self._test_step()
             print(f"\nTraining loss: {train_loss} \t Training pnsr: {train_psnr} \n")
-            print(f"Test loss: {test_loss} \t Test pnsr: {test_psnr} \n")
+            # print(f"Test loss: {test_loss} \t Test pnsr: {test_psnr} \n")
 
             if self.save_path:
                 self.save_state_dict(e)

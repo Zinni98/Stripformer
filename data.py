@@ -1,8 +1,10 @@
 import os
 from torch.utils.data import Dataset, DataLoader
-from PIL import Image
+from PIL import Image, ImageFile
 from torchvision import transforms
 
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class GOPRODataset(Dataset):
     def __init__(self, root, img_transforms=None, training=True, gamma_blur=True):
