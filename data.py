@@ -4,8 +4,6 @@ from PIL import Image, ImageFile
 from torchvision import transforms
 
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
 class GOPRODataset(Dataset):
     def __init__(self, root, img_transforms=None, training=True, gamma_blur=True):
         """
@@ -37,6 +35,7 @@ class GOPRODataset(Dataset):
 
         self.ground_truth_images, self.blur_images = self._get_images()
         self.length = len(self.ground_truth_images)
+        ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
     def _get_images(self):
