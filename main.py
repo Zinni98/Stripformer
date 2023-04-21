@@ -69,8 +69,8 @@ def main_fn():
                                                             config.train_img_size)),
                                            ToTensor2Imgs()])
     if config.pretrain:
-        img_transforms["pretrain"] = Compose2Imgs([RC2Imgs((config.train_img_size,  # noqa
-                                                            config.train_img_size)),
+        img_transforms["pretrain"] = Compose2Imgs([RC2Imgs((config.pre_train_img_size,  # noqa
+                                                            config.pre_train_img_size)),
                                                    ToTensor2Imgs()])
 
         _, _, _, train_loader, pretrain_loader, test_loader = get_data_pretrain(path_to_gopro,  # noqa

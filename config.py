@@ -11,5 +11,5 @@ accumulation_steps = 8  # Performing gradient accumulation to save memory optimi
 max_lr = 1e-4
 min_lr = 1e-7
 pre_train_img_size = 256
-train_img_size = 512
+train_img_size = 256
 use_wandb = False  # Whether to log training status on Weights and biases, if unsure what this is, set to False
