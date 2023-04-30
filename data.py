@@ -46,18 +46,18 @@ class GOPRODataset(Dataset):
             if os.path.isdir(f):
                 ground_truth_dir = os.path.join(f, "sharp")
 
-                blur_gamma_dir = os.path.join(f, "blur_gamma")
+                #blur_gamma_dir = os.path.join(f, "blur_gamma")
                 blur_dir = os.path.join(f, "blur")
 
                 gt = self._get_imgs_from_path(ground_truth_dir)
                 # Double because we are considering blur and blur gamma.
                 ground_truth_images.extend(gt)
-                ground_truth_images.extend(gt)
+                #ground_truth_images.extend(gt)
 
                 blur = self._get_imgs_from_path(blur_dir)
-                blur_gamma = self._get_imgs_from_path(blur_gamma_dir)
+                #blur_gamma = self._get_imgs_from_path(blur_gamma_dir)
                 blur_images.extend(blur)
-                blur_images.extend(blur_gamma)
+                #blur_images.extend(blur_gamma)
 
         return ground_truth_images, blur_images
 

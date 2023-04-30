@@ -4,7 +4,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from torch.optim import Adam
 from torchmetrics import PeakSignalNoiseRatio
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import CosineAnnealingLR, CosineAnnealingWarmRestarts
 
 
 class Trainer(nn.Module):
@@ -53,10 +53,6 @@ class Trainer(nn.Module):
         self.min_lr = min_lr
         self.batch_size = batch_size
         self.loss_fn = loss_fn
-        self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
-        self.scheduler = CosineAnnealingLR(self.optimizer,
-                                           self.epochs,
-                                           eta_min=self.min_lr)
         self.save_path = save_path
         self.psnr = PeakSignalNoiseRatio().to(self.device)
         self.accumulation_steps = accumulation_steps
@@ -66,9 +62,20 @@ class Trainer(nn.Module):
         if self.load_from_path:
             self.checkpoint = torch.load(self.load_from_path)
             self.network.load_state_dict(self.checkpoint["model_state_dict"])
+            self.network.to(self.device)
+            self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
+            self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
+                                                         int(self.epochs/25),
+                                                         eta_min=self.min_lr)
             self.optimizer.load_state_dict(self.checkpoint["optim_state_dict"])
             self.scheduler.load_state_dict(self.checkpoint["sched_state_dict"])
             self.current_epoch = self.checkpoint["epoch"]
+        else:
+            self.network.to(self.device)
+            self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
+            self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
+                                                         int(self.epochs/25),
+                                                         eta_min=self.min_lr)
 
         self.wandb = use_wandb
         self._scaler = torch.cuda.amp.GradScaler()
@@ -92,8 +99,8 @@ class Trainer(nn.Module):
                     }, self.save_path)
 
     def train(self, loader=None):
-        self.network.to(self.device)
         loader = loader if loader else self.train_loader
+        best = 0
         for e in range(self.current_epoch, self.epochs):
             print(f"----------- Epoch {e+1} -----------")
             self.network.train()
@@ -102,7 +109,8 @@ class Trainer(nn.Module):
             print(f"\nTraining loss: {train_loss} \t Training pnsr: {train_psnr} \n")
             # print(f"Test loss: {test_loss} \t Test pnsr: {test_psnr} \n")
 
-            if self.save_path:
+            if self.save_path and train_psnr > best:
+                best = train_psnr
                 self.save_state_dict(e)
 
         if self.wandb:
