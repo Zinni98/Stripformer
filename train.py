@@ -3,7 +3,7 @@ import wandb
 import torch.nn as nn
 from tqdm import tqdm
 from torch.optim import Adam
-from torchmetrics import PeakSignalNoiseRatio
+from torchmetrics import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 from torch.optim.lr_scheduler import CosineAnnealingLR, CosineAnnealingWarmRestarts
 
 
@@ -55,6 +55,7 @@ class Trainer(nn.Module):
         self.loss_fn = loss_fn
         self.save_path = save_path
         self.psnr = PeakSignalNoiseRatio().to(self.device)
+        self.ssim = StructuralSimilarityIndexMeasure().to(self.device)
         self.accumulation_steps = accumulation_steps
 
         self.load_from_path = load_from_path
@@ -63,19 +64,19 @@ class Trainer(nn.Module):
             self.checkpoint = torch.load(self.load_from_path)
             self.network.load_state_dict(self.checkpoint["model_state_dict"])
             self.network.to(self.device)
-            self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
-            self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
-                                                         int(self.epochs/25),
-                                                         eta_min=self.min_lr)
+            self.optimizer = Adam(self.network.parameters(), self.min_lr, amsgrad=True)
+            self.scheduler = CosineAnnealingLR(self.optimizer,
+                                               int(self.epochs/25),
+                                               eta_min=self.lr)
             self.optimizer.load_state_dict(self.checkpoint["optim_state_dict"])
             self.scheduler.load_state_dict(self.checkpoint["sched_state_dict"])
             self.current_epoch = self.checkpoint["epoch"]
         else:
             self.network.to(self.device)
-            self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
-            self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
-                                                         int(self.epochs/25),
-                                                         eta_min=self.min_lr)
+            self.optimizer = Adam(self.network.parameters(), self.min_lr, amsgrad=True)
+            self.scheduler = CosineAnnealingLR(self.optimizer,
+                                               int(self.epochs/25),
+                                               eta_min=self.lr)
 
         self.wandb = use_wandb
         self._scaler = torch.cuda.amp.GradScaler()
@@ -104,10 +105,9 @@ class Trainer(nn.Module):
         for e in range(self.current_epoch, self.epochs):
             print(f"----------- Epoch {e+1} -----------")
             self.network.train()
-            train_loss, train_psnr = self._training_epoch(loader)
-            # test_loss, test_psnr = self._test_step()
-            print(f"\nTraining loss: {train_loss} \t Training pnsr: {train_psnr} \n")
-            # print(f"Test loss: {test_loss} \t Test pnsr: {test_psnr} \n")
+            train_loss, train_psnr, train_ssim = self._training_epoch(loader)
+            print(f"\nTraining loss: {train_loss} \t Training pnsr: {train_psnr} \t\
+                    Training ssim: {train_ssim}\n")
 
             if self.save_path and train_psnr > best:
                 best = train_psnr
@@ -120,6 +120,7 @@ class Trainer(nn.Module):
         samples = 0
         cumulative_loss = 0
         cumulative_psnr = 0
+        cumulative_ssim = 0
         loader = loader
         with tqdm(loader, unit="batch") as tepoch:
             for batch_idx, imgs in enumerate(tepoch):
@@ -152,17 +153,21 @@ class Trainer(nn.Module):
 
                 with torch.no_grad():
                     psnr = self.psnr(out, sharp_img)
+                    ssim = self.ssim(out, sharp_img)
                     cumulative_psnr += psnr.item()
+                    cumulative_ssim += ssim.item()
 
                 tepoch.set_postfix({"psnr": cumulative_psnr/samples,
-                                    "loss": cumulative_loss/samples})
+                                    "ssim": cumulative_ssim/samples,
+                                    "loss": cumulative_loss/samples,})
 
         if self.wandb:
             wandb.log({"psnr": cumulative_psnr/samples,
+                       "ssim": cumulative_ssim/samples,
                        "loss": cumulative_loss/samples,
                        "lr": self._get_lr()})
         self.scheduler.step()
-        return cumulative_loss/samples, cumulative_psnr/samples
+        return cumulative_loss/samples, cumulative_psnr/samples, cumulative_ssim/samples
 
     def _get_lr(self):
         for pg in self.optimizer.param_groups:
@@ -172,6 +177,7 @@ class Trainer(nn.Module):
         samples = 0
         cumulative_loss = 0
         cumulative_psnr = 0
+        cumulative_ssim = 0
         self.network.eval()
         with torch.no_grad():
             with tqdm(self.test_loader, unit="batch") as tepoch:
@@ -189,11 +195,14 @@ class Trainer(nn.Module):
                     cumulative_loss += loss.item()
 
                     psnr = self.psnr(out, sharp_img)
+                    ssim = self.ssim(out, sharp_img)
                     cumulative_psnr += psnr.item()
+                    cumulative_ssim += ssim.item()
                     tepoch.set_postfix({"psnr": cumulative_psnr/samples,
-                                        "loss": cumulative_loss/samples})
+                                        "ssim": cumulative_ssim/samples,
+                                        "loss": cumulative_loss/samples},)
 
-        return cumulative_loss/samples, cumulative_psnr/samples
+        return cumulative_loss/samples, cumulative_psnr/samples, cumulative_ssim/samples
 
 
 class TrainerPretrainer(Trainer):
