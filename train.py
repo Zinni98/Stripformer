@@ -64,19 +64,19 @@ class Trainer(nn.Module):
             self.checkpoint = torch.load(self.load_from_path)
             self.network.load_state_dict(self.checkpoint["model_state_dict"])
             self.network.to(self.device)
-            self.optimizer = Adam(self.network.parameters(), self.min_lr, amsgrad=True)
-            self.scheduler = CosineAnnealingLR(self.optimizer,
-                                               int(self.epochs/25),
-                                               eta_min=self.lr)
+            self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
+            self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
+                                                         int(self.epochs/25),
+                                                         eta_min=self.min_lr)
             self.optimizer.load_state_dict(self.checkpoint["optim_state_dict"])
             self.scheduler.load_state_dict(self.checkpoint["sched_state_dict"])
             self.current_epoch = self.checkpoint["epoch"]
         else:
             self.network.to(self.device)
-            self.optimizer = Adam(self.network.parameters(), self.min_lr, amsgrad=True)
-            self.scheduler = CosineAnnealingLR(self.optimizer,
-                                               int(self.epochs/25),
-                                               eta_min=self.lr)
+            self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
+            self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
+                                                         int(self.epochs/25),
+                                                         eta_min=self.min_lr)
 
         self.wandb = use_wandb
         self._scaler = torch.cuda.amp.GradScaler()
