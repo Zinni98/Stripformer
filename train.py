@@ -66,7 +66,8 @@ class Trainer(nn.Module):
             self.network.to(self.device)
             self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
             self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
-                                                         int(self.epochs/25),
+                                                         20,
+                                                         T_mult=2,
                                                          eta_min=self.min_lr)
             self.optimizer.load_state_dict(self.checkpoint["optim_state_dict"])
             self.scheduler.load_state_dict(self.checkpoint["sched_state_dict"])
@@ -75,7 +76,8 @@ class Trainer(nn.Module):
             self.network.to(self.device)
             self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
             self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
-                                                         int(self.epochs/25),
+                                                         20,
+                                                         T_mult=2,
                                                          eta_min=self.min_lr)
 
         self.wandb = use_wandb
@@ -83,7 +85,9 @@ class Trainer(nn.Module):
 
         if self.wandb:
             self.run = wandb.init(project="stripformer",
-                                  tags=["stripformer", "siv"])
+                                  tags=["stripformer", "siv"],
+                                  id="dyzcjy5c",
+                                  resume="must")
 
             wandb.config = {
                 "epochs": self.epochs,
