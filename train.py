@@ -85,9 +85,7 @@ class Trainer(nn.Module):
 
         if self.wandb:
             self.run = wandb.init(project="stripformer",
-                                  tags=["stripformer", "siv"],
-                                  id="dyzcjy5c",
-                                  resume="must")
+                                  tags=["stripformer", "siv"])
 
             wandb.config = {
                 "epochs": self.epochs,
