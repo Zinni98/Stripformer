@@ -2,24 +2,27 @@
 Implementation of the paper: [Stripformer: Strip Transformer for Fast Image Deblurring](https://arxiv.org/abs/2204.04627)
 
 ## Get started
+To get started follow these steps:
+- Clone the repository:
+  ```
+  git clone https://github.com/Zinni98/Stripformer.git
+  ```
+- Enter the directory containing the repository:
+  ```
+  cd Stripformer
+  ```
+- Make a new virtual environment (Optional):
+  ```
+  conda create -n stripformer python=3.8
+  conda activate stripformer
+  ```
+- Install all the dependecies:
+  ```
+  pip install -r requirements.txt
+  ```
+- Download the [dataset](https://drive.google.com/file/d/1y4wvPdOG3mojpFCHTqLgriexhbjoWVkK/view). For now, only GoPro Dataset is supported
 
-Clone the repository:
-```
-git clone https://github.com/Zinni98/Stripformer.git
-```
-Enter the directory containing the repository:
-```
-cd Stripformer
-```
-Make a new virtual environment (Optional):
-```
-conda create -n stripformer python=3.8
-conda activate stripformer
-```
-Finally install all the dependecies:
-```
-pip install -r requirements.txt
-```
+
 
 ## Configuration parameters
 Here is a list of the configuration parameters and their meaning in the [config.py](config.py)
@@ -48,13 +51,21 @@ Before starting training you should tweak the parameters in the [config.py](conf
 - ⚠️⚠️**Make sure that ```test_only``` is set to false to train the system**⚠️⚠️
 - Change the ```gopro_dir``` value to match the path where the dataset is stored. If needed set ```save_models_dir```, ```load_dir``` and ```colab_dir``` (This last one is needed only if running on colab. See configuration parameters above for more details).
 - Set the other parameters as desired (Default is fine)
-- Run ```python3 main.py```
+
+After that to train the network run the following:
+```
+python3 main.py
+```
 
 ## Testing
 To test the network:
 - Change the ```gopro_dir``` value to match the path where the dataset is stored. Set ```load_dir``` and ```colab_dir``` (This last one is needed only if running on colab. See configuration parameters above for more details).
 - Set ```test_only``` to **True**.
-- Run ```python3 main.py```
+
+After that to test the network run the following:
+```
+python3 main.py
+```
 
 # Citations
 
@@ -64,5 +75,15 @@ To test the network:
   title     = {Stripformer: Strip Transformer for Fast Image Deblurring},
   booktitle = {ECCV},
   year      = {2022}
+}
+```
+
+```
+@InProceedings{Nah_2017_CVPR,
+  author = {Nah, Seungjun and Kim, Tae Hyun and Lee, Kyoung Mu},
+  title = {Deep Multi-Scale Convolutional Neural Network for Dynamic Scene Deblurring},
+  booktitle = {CVPR},
+  month = {July},
+  year = {2017}
 }
 ```
