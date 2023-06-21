@@ -1,5 +1,7 @@
 from torchvision import transforms
 import torchvision.transforms.functional as tvf
+import torch
+from torchvision.transforms.functional import InterpolationMode
 
 
 class Compose2Imgs(transforms.Compose):
@@ -38,3 +40,23 @@ class RC2Imgs(transforms.RandomCrop):
         i, j, h, w = self.get_params(img1, self.size)
 
         return tvf.crop(img1, i, j, h, w), tvf.crop(img2, i, j, h, w)
+    
+class RandomHorizontalFlip2Imgs(transforms.RandomHorizontalFlip):
+    def __init__(self, p=0.5):
+        super().__init__(p)
+    
+    def forward(self, img1, img2):
+        if torch.rand(1) < self.p:
+            img1 = tvf.hflip(img1)
+            img2 = tvf.hflip(img2)
+        return img1, img2
+    
+class RandomVerticalFlip2Imgs(transforms.RandomVerticalFlip):
+    def __init__(self, p=0.5):
+        super().__init__(p)
+    
+    def forward(self, img1, img2):
+        if torch.rand(1) < self.p:
+            img1 = tvf.vflip(img1)
+            img2 = tvf.vflip(img2)
+        return img1, img2
