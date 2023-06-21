@@ -62,14 +62,18 @@ def main_fn():
     model = Stripformer()
     loss_fn = StipformerLoss()
     img_transforms = dict()
-    img_transforms["train"] = Compose2Imgs([RC2Imgs((config.train_img_size,  # noqa
+    img_transforms["train"] = Compose2Imgs([RandomHorizontalFlip2Imgs(),
+                                            RandomVerticalFlip2Imgs(),
+                                            RC2Imgs((config.train_img_size,  # noqa
                                                      config.train_img_size)),
                                             ToTensor2Imgs()])
     img_transforms["test"] = Compose2Imgs([ToTensor2Imgs()])
     if config.pretrain:
-        img_transforms["pretrain"] = Compose2Imgs([RC2Imgs((config.pre_train_img_size,  # noqa
-                                                            config.pre_train_img_size)),
-                                                   ToTensor2Imgs()])
+        img_transforms["pretrain"] = Compose2Imgs([RandomHorizontalFlip2Imgs(),
+                                                   RandomVerticalFlip2Imgs(),
+                                                   RC2Imgs((config.train_img_size,  # noqa
+                                                            config.train_img_size)),
+                                                    ToTensor2Imgs()])
 
         _, _, _, train_loader, pretrain_loader, test_loader = get_data_pretrain(path_to_gopro,  # noqa
                                                                                 config.batch_size,  # noqa
