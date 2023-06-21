@@ -216,26 +216,6 @@ class Trainer(nn.Module):
                                         "loss": cumulative_loss/samples},)
         return cumulative_loss/samples, cumulative_psnr/samples, cumulative_ssim/samples
 
-    def save_img(self,
-                 tensor_img,
-                 path="/media/dataset/deblurred/img1.png"):
-        if len(tensor_img.shape) == 4:
-            tensor_img = torch.unsqueeze(tensor_img, 0)
-        save_image(tensor_img, path)
-        tensor_img = rearrange(tensor_img, "c h w -> h w c")
-        img = tensor_img.numpy()
-        plt.imshow(img)
-
-    def deblur_img(self,
-                   blurred_img):
-        if not isinstance(blurred_img, torch.Tensor):
-            to_tensor = T.ToTensor()
-            blurred_img = to_tensor(blurred_img)
-        if len(blurred_img.shape) == 3:
-            blurred_img = torch.squeeze(blurred_img, 0)
-        deblurred_img = self.network(blurred_img)
-        return deblurred_img
-
 
 class TrainerPretrainer(Trainer):
     """
