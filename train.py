@@ -2,6 +2,10 @@ import torch
 import wandb
 import torch.nn as nn
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+from einops import rearrange
+from torchvision.utils import save_image
+import torchvision.transforms as T
 from torch.optim import Adam
 from torchmetrics import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 from torch.optim.lr_scheduler import CosineAnnealingLR, CosineAnnealingWarmRestarts
@@ -53,7 +57,15 @@ class Trainer(nn.Module):
         self.min_lr = min_lr
         self.batch_size = batch_size
         self.loss_fn = loss_fn
-        self.save_path = save_path
+        if save_path:
+            if len(save_path.split('.')) > 2:
+                raise ValueError("Invalid path save path name")
+            save_path_split = save_path.split('.')
+            self.save_path_best = f"{save_path_split[0]}_best.{save_path_split[1]}"
+            self.save_path_last = f"{save_path_split[0]}_last.{save_path_split[1]}"
+        else:
+            self.save_path_best = None
+            self.save_path_last = None
         self.psnr = PeakSignalNoiseRatio().to(self.device)
         self.ssim = StructuralSimilarityIndexMeasure().to(self.device)
         self.accumulation_steps = accumulation_steps
@@ -66,8 +78,7 @@ class Trainer(nn.Module):
             self.network.to(self.device)
             self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
             self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
-                                                         20,
-                                                         T_mult=2,
+                                                         100,
                                                          eta_min=self.min_lr)
             self.optimizer.load_state_dict(self.checkpoint["optim_state_dict"])
             self.scheduler.load_state_dict(self.checkpoint["sched_state_dict"])
@@ -76,8 +87,7 @@ class Trainer(nn.Module):
             self.network.to(self.device)
             self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
             self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
-                                                         20,
-                                                         T_mult=2,
+                                                         100,
                                                          eta_min=self.min_lr)
 
         self.wandb = use_wandb
@@ -94,36 +104,37 @@ class Trainer(nn.Module):
                 "model": "stripformer"
             }
 
-    def save_state_dict(self, e):
+    def save_state_dict(self, e, path):
         torch.save({"model_state_dict": self.network.state_dict(),
                     "optim_state_dict": self.optimizer.state_dict(),
                     "sched_state_dict": self.scheduler.state_dict(),
                     "epoch": e
-                    }, self.save_path)
+                    }, path)
 
     def train(self, loader=None):
         loader = loader if loader else self.train_loader
         best = 0
         for e in range(self.current_epoch, self.epochs):
             print(f"----------- Epoch {e+1} -----------")
-            self.network.train()
-            train_loss, train_psnr, train_ssim = self._training_epoch(loader)
+            train_loss, train_psnr, train_ssim = self._training_epoch(loader, e)
             print(f"\nTraining loss: {train_loss} \t Training pnsr: {train_psnr} \t\
                     Training ssim: {train_ssim}\n")
 
-            if self.save_path and train_psnr > best:
+            self.save_state_dict(e, self.save_path_last)
+            if self.save_path_best and train_psnr > best:
                 best = train_psnr
-                self.save_state_dict(e)
+                self.save_state_dict(e, self.save_path_best)
 
         if self.wandb:
             wandb.finish()
 
-    def _training_epoch(self, loader):
+    def _training_epoch(self, loader, e):
         samples = 0
         cumulative_loss = 0
         cumulative_psnr = 0
         cumulative_ssim = 0
         loader = loader
+        self.network.train()
         with tqdm(loader, unit="batch") as tepoch:
             for batch_idx, imgs in enumerate(tepoch):
                 blur_img = imgs[0]
@@ -161,13 +172,13 @@ class Trainer(nn.Module):
 
                 tepoch.set_postfix({"psnr": cumulative_psnr/samples,
                                     "ssim": cumulative_ssim/samples,
-                                    "loss": cumulative_loss/samples,})
+                                    "loss": cumulative_loss/samples})
 
         if self.wandb:
             wandb.log({"psnr": cumulative_psnr/samples,
                        "ssim": cumulative_ssim/samples,
                        "loss": cumulative_loss/samples,
-                       "lr": self._get_lr()})
+                       "lr": self._get_lr()}, step=e)
         self.scheduler.step()
         return cumulative_loss/samples, cumulative_psnr/samples, cumulative_ssim/samples
 
@@ -175,7 +186,7 @@ class Trainer(nn.Module):
         for pg in self.optimizer.param_groups:
             return pg["lr"]
 
-    def _test_step(self):
+    def test_step(self):
         samples = 0
         cumulative_loss = 0
         cumulative_psnr = 0
@@ -203,8 +214,27 @@ class Trainer(nn.Module):
                     tepoch.set_postfix({"psnr": cumulative_psnr/samples,
                                         "ssim": cumulative_ssim/samples,
                                         "loss": cumulative_loss/samples},)
-
         return cumulative_loss/samples, cumulative_psnr/samples, cumulative_ssim/samples
+
+    def save_img(self,
+                 tensor_img,
+                 path="/media/dataset/deblurred/img1.png"):
+        if len(tensor_img.shape) == 4:
+            tensor_img = torch.unsqueeze(tensor_img, 0)
+        save_image(tensor_img, path)
+        tensor_img = rearrange(tensor_img, "c h w -> h w c")
+        img = tensor_img.numpy()
+        plt.imshow(img)
+
+    def deblur_img(self,
+                   blurred_img):
+        if not isinstance(blurred_img, torch.Tensor):
+            to_tensor = T.ToTensor()
+            blurred_img = to_tensor(blurred_img)
+        if len(blurred_img.shape) == 3:
+            blurred_img = torch.squeeze(blurred_img, 0)
+        deblurred_img = self.network(blurred_img)
+        return deblurred_img
 
 
 class TrainerPretrainer(Trainer):
