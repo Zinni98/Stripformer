@@ -65,9 +65,7 @@ def main_fn():
     img_transforms["train"] = Compose2Imgs([RC2Imgs((config.train_img_size,  # noqa
                                                      config.train_img_size)),
                                             ToTensor2Imgs()])
-    img_transforms["test"] = Compose2Imgs([CenterCrop2Imgs((config.train_img_size,  # noqa
-                                                            config.train_img_size)),
-                                           ToTensor2Imgs()])
+    img_transforms["test"] = Compose2Imgs([ToTensor2Imgs()])
     if config.pretrain:
         img_transforms["pretrain"] = Compose2Imgs([RC2Imgs((config.pre_train_img_size,  # noqa
                                                             config.pre_train_img_size)),
@@ -112,7 +110,15 @@ def main_fn():
                           config.use_wandb,
                           config.accumulation_steps
                           )
-    trainer.train()
+    if config.test_only:
+        loss, psnr, ssim = trainer.test_step()
+        print(f"Test loss: {loss} \t Test pnsr: {psnr} \t\
+                Test ssim: {ssim}\n")
+    else:
+        trainer.train()
+        loss, psnr, ssim = trainer.test_step()
+        print(f"Test loss: {loss} \t Test pnsr: {psnr} \t\
+                Test ssim: {ssim}\n")
 
 
 if __name__ == "__main__":
