@@ -78,7 +78,7 @@ class Trainer(nn.Module):
             self.network.to(self.device)
             self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
             self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
-                                                         100,
+                                                         int(epochs/20),
                                                          eta_min=self.min_lr)
             self.optimizer.load_state_dict(self.checkpoint["optim_state_dict"])
             self.scheduler.load_state_dict(self.checkpoint["sched_state_dict"])
@@ -87,7 +87,7 @@ class Trainer(nn.Module):
             self.network.to(self.device)
             self.optimizer = Adam(self.network.parameters(), self.lr, amsgrad=True)
             self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
-                                                         100,
+                                                         int(epochs/20),
                                                          eta_min=self.min_lr)
 
         self.wandb = use_wandb

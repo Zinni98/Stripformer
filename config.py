@@ -1,8 +1,8 @@
 # flake8: noqa
 gopro_dir = "/media/dataset/GOPRO_Large"
-saved_models_dir = "/media/checkpoint/run6.tar"  # Where to save the model during training. Set to None If don't want to save
-colab_dir = "/content/gdrive/My Drive/Stripformer/"  # Put here the directory of the repo if you are running in colab
+save_models_dir = "/media/checkpoint/run6.tar"  # Where to save the model during training. Set to None If don't want to save
 load_dir = "/media/checkpoint/run4.tar"  # Where to find already trained model
+colab_dir = "/content/gdrive/My Drive/Stripformer/"  # Put here the directory of the repo if you are running in colab
 pretrain = False
 pre_train_epochs = 20
 epochs = 1000
