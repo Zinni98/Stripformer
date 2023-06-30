@@ -7,7 +7,7 @@ from model.stripformer import Stripformer
 from PIL import Image
 
 
-def save_img(tensor_img, path="./example_images/deblurred/img2.png"):
+def save_img(tensor_img, path="./example_images/deblurred/img4.png"):
     if len(tensor_img.shape) == 4:
         tensor_img = torch.squeeze(tensor_img, 0)
     save_image(tensor_img, fp=path)
@@ -29,11 +29,11 @@ def deblur_img(model, blurred_img):
 
 def main():
     network = Stripformer()
-    checkpoint = torch.load("./saved_models/run4.tar", map_location="cpu")
+    checkpoint = torch.load("./saved_models/run6_best.tar", map_location="cpu")
     network.load_state_dict(checkpoint["model_state_dict"])
     network.to("cpu")
     print("network loaded")
-    img = Image.open("./GOPRO_Large/test/GOPR0384_11_00/blur/000008.png").convert("RGB") # ./GOPRO_Large/test/GOPR0384_11_00/blur/000008.png
+    img = Image.open("./GOPRO_Large/test/GOPR0881_11_01/blur/000203.png").convert("RGB") # ./GOPRO_Large/test/GOPR0881_11_01/blur/000203.png
     db_img = deblur_img(network, img)
     save_img(db_img)
 

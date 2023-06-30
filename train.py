@@ -89,7 +89,6 @@ class Trainer(nn.Module):
             self.scheduler = CosineAnnealingWarmRestarts(self.optimizer,
                                                          int(epochs/20),
                                                          eta_min=self.min_lr)
-
         self.wandb = use_wandb
         self._scaler = torch.cuda.amp.GradScaler()
 
