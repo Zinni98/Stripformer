@@ -1,8 +1,8 @@
-einops==0.6.1
-matplotlib==3.7.1
-Pillow==9.5.0
-torch==2.0.1
-torchmetrics==0.11.4
-torchvision==0.15.2
-tqdm==4.65.0
-wandb==0.15.4
+einops
+matplotlib
+Pillow
+torch
+torchmetrics
+torchvision
+tqdm
+wandb

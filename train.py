@@ -138,7 +138,6 @@ class Trainer(nn.Module):
             for batch_idx, imgs in enumerate(tepoch):
                 blur_img = imgs[0]
                 sharp_img = imgs[1]
-                self.optimizer.zero_grad()
                 tepoch.set_description(f"{batch_idx} Batch")
 
                 blur_img = blur_img.to(self.device)
@@ -159,6 +158,7 @@ class Trainer(nn.Module):
                     self._scaler.step(self.optimizer)
                     # self.optimizer.step()
                     self._scaler.update()
+                    self.optimizer.zero_grad()
 
                 samples += blur_img.shape[0]
                 cumulative_loss += loss.item()
